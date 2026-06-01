@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoChampion — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <nav class="navbar">
+    <div class="nav-logo">
+      <svg class="nav-pin" viewBox="0 0 24 32" fill="none"><path d="M12 0C5.4 0 0 5.4 0 12C0 21 12 32 12 32C12 32 24 21 24 12C24 5.4 18.6 0 12 0Z" fill="var(--accent)"/><circle cx="12" cy="12" r="5" fill="var(--bg)"/></svg>
+      <span class="nav-title">GEO<span class="accent">CHAMP</span></span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Standings</a>
+      <span class="nav-link judge-badge">Admin</span>
+      <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Admin Login Gate -->
+  <div id="adminLoginGate" class="container center-content">
+    <div class="login-card">
+      <div class="login-icon">
+        <svg viewBox="0 0 24 24" fill="none" width="36"><rect x="3" y="11" width="18" height="11" rx="2" stroke="var(--accent)" stroke-width="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <h2 class="login-title">Admin <span class="accent">Access</span></h2>
+      <p class="login-sub">Administrator credentials required</p>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="adminUsername" class="form-input" placeholder="admin" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="adminPassword" class="form-input" placeholder="••••••••" />
+      </div>
+      <div id="adminLoginError" class="error-msg hidden"></div>
+      <button class="btn btn-primary btn-full" onclick="handleAdminLogin()">Enter Admin Panel</button>
+      <a href="index.html" class="back-link">← Back to Standings</a>
+    </div>
+  </div>
+
+  <!-- Admin Panel (hidden until login) -->
+  <main class="container hidden" id="adminPanel">
+    <header class="page-header">
+      <div class="header-label">Administration</div>
+      <h1 class="page-title">Admin <span class="accent">Panel</span></h1>
+    </header>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('teams')">
+        <svg viewBox="0 0 20 20" fill="none" width="16"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M2 17c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Teams
+      </button>
+      <button class="tab-btn" onclick="switchTab('matches')">
+        <svg viewBox="0 0 20 20" fill="none" width="16"><path d="M10 2L18 10L10 18M2 10H18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        All Matches
+      </button>
+      <button class="tab-btn" onclick="switchTab('stats')">
+        <svg viewBox="0 0 20 20" fill="none" width="16"><rect x="3" y="10" width="3" height="8" rx="1" fill="currentColor" opacity="0.7"/><rect x="8.5" y="6" width="3" height="12" rx="1" fill="currentColor"/><rect x="14" y="2" width="3" height="16" rx="1" fill="currentColor" opacity="0.7"/></svg>
+        Statistics
+      </button>
+      <button class="tab-btn" onclick="switchTab('judges')">
+        <svg viewBox="0 0 20 20" fill="none" width="16"><path d="M9 12H3M17 8H11M5 8a2 2 0 100-4 2 2 0 000 4zM15 16a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Judges
+      </button>
+    </div>
+
+    <!-- TEAMS TAB -->
+    <div id="tab-teams" class="tab-content active">
+      <div class="two-col-layout">
+        <div class="card">
+          <h3 class="card-title">Add / Edit Team</h3>
+          <input type="hidden" id="editTeamId" />
+          <div class="form-group">
+            <label class="form-label">Team Name</label>
+            <input type="text" id="teamName" class="form-input" placeholder="e.g. Team Alpha" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Player 1</label>
+            <input type="text" id="player1" class="form-input" placeholder="Full name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Player 2</label>
+            <input type="text" id="player2" class="form-input" placeholder="Full name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Player 3</label>
+            <input type="text" id="player3" class="form-input" placeholder="Full name" />
+          </div>
+          <div id="teamFormError" class="error-msg hidden"></div>
+          <div id="teamFormSuccess" class="success-msg hidden"></div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" onclick="resetTeamForm()">Clear</button>
+            <button class="btn btn-primary" onclick="saveTeam()">Save Team</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">All Teams</h3>
+          <div id="teamsList" class="teams-list">
+            <p class="empty-state">No teams yet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MATCHES TAB -->
+    <div id="tab-matches" class="tab-content hidden">
+      <div class="judge-groups" id="judgeGroups">
+        <p class="empty-state">No matches recorded yet.</p>
+      </div>
+    </div>
+
+    <!-- STATS TAB -->
+    <div id="tab-stats" class="tab-content hidden">
+      <div class="stats-grid">
+        <div class="card stat-highlight-card">
+          <div class="stat-highlight-icon">🏆</div>
+          <h3 class="card-title">Most Match Wins</h3>
+          <div id="statMostWins" class="stat-highlight-val">—</div>
+        </div>
+        <div class="card stat-highlight-card">
+          <div class="stat-highlight-icon">📍</div>
+          <h3 class="card-title">Highest Team Score</h3>
+          <div id="statHighestTeamScore" class="stat-highlight-val">—</div>
+        </div>
+        <div class="card stat-highlight-card">
+          <div class="stat-highlight-icon">⭐</div>
+          <h3 class="card-title">Highest Player Score</h3>
+          <div id="statHighestPlayerScore" class="stat-highlight-val">—</div>
+        </div>
+      </div>
+
+      <div class="two-col-layout" style="margin-top:2rem">
+        <div class="card">
+          <h3 class="card-title">Team Rankings</h3>
+          <div id="statsTeamRankings"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Player Rankings</h3>
+          <div id="statsPlayerRankings"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JUDGES TAB -->
+    <div id="tab-judges" class="tab-content hidden">
+      <div class="two-col-layout">
+        <div class="card">
+          <h3 class="card-title">Create Judge Account</h3>
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" id="judgeUsername" class="form-input" placeholder="judge1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="judgePassword" class="form-input" placeholder="••••••••" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Display Name</label>
+            <input type="text" id="judgeDisplayName" class="form-input" placeholder="Judge 1" />
+          </div>
+          <div id="judgeFormError" class="error-msg hidden"></div>
+          <div id="judgeFormSuccess" class="success-msg hidden"></div>
+          <button class="btn btn-primary btn-full" onclick="createJudge()">Create Judge</button>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Judge Accounts</h3>
+          <div id="judgesList" class="teams-list">
+            <p class="empty-state">No judges yet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
