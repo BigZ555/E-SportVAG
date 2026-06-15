@@ -12,6 +12,14 @@
       ".read": true,
       ".write": true
     },
+    "rounds": {
+      ".read": true,
+      ".write": true
+    },
+    "schedule": {
+      ".read": true,
+      ".write": true
+    },
     "matches": {
       ".read": true,
       ".write": true
