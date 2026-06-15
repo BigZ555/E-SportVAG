@@ -27,11 +27,23 @@
   <main class="container">
     <header class="page-header">
       <div class="header-label" id="judgeLabel">Judge Panel</div>
-      <h1 class="page-title">Start a <span class="accent">Match</span></h1>
+      <h1 class="page-title">Record a <span class="accent">Match</span></h1>
     </header>
 
+    <!-- Round Selection -->
+    <div class="card" style="margin-bottom: 2rem;">
+      <h3 class="card-title">📋 Select Round</h3>
+      <p class="page-sub">You can only record matches for active rounds</p>
+      <select id="roundSelect" class="form-input form-select" onchange="onRoundChanged()">
+        <option value="">— Choose round —</option>
+      </select>
+      <div id="roundStatus" style="margin-top: 1rem; padding: 1rem; border-radius: 8px; background: var(--card-bg); display: none;">
+        <span id="roundStatusText" style="font-size: 0.9rem; color: var(--text-muted);"></span>
+      </div>
+    </div>
+
     <!-- Match Form -->
-    <div class="card match-form-card" id="matchFormCard">
+    <div class="card match-form-card" id="matchFormCard" style="display: none;">
       <h3 class="card-title">
         <svg viewBox="0 0 40 56" fill="none" width="18"><path d="M20 0C9 0 0 9 0 20C0 35 20 56 20 56C20 56 40 35 40 20C40 9 31 0 20 0Z" fill="var(--accent)"/><circle cx="20" cy="20" r="8" fill="var(--bg)"/></svg>
         New Match
@@ -92,10 +104,10 @@
     </div>
 
     <!-- Judge's Match History -->
-    <div class="card">
-      <h3 class="card-title">My Match History</h3>
+    <div class="card" id="historyCard" style="display: none;">
+      <h3 class="card-title">📊 My Match History (This Round)</h3>
       <div id="judgeMatchHistory" class="match-history-list">
-        <p class="empty-state">No matches recorded yet.</p>
+        <p class="empty-state">No matches recorded yet in this round.</p>
       </div>
     </div>
   </main>
@@ -104,6 +116,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="/js/firebase-config.js"></script>
   <script src="/js/auth.js"></script>
-  <script src="/js/judge.js"></script>
+  <script src="/js/judge-extended.js"></script>
 </body>
 </html>
