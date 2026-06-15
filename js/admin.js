@@ -1,7 +1,8 @@
-// ===== ADMIN PANEL =====
+// ===== ADMIN PANEL WITH ROUNDS =====
 
 let adminTeams = {};
 let adminMatches = {};
+let adminRounds = {};
 
 function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -9,27 +10,292 @@ function switchTab(tab) {
   document.getElementById(`tab-${tab}`)?.classList.remove('hidden');
   event.currentTarget.classList.add('active');
 
-  if (tab === 'matches') renderMatchesByJudge();
-  if (tab === 'stats') renderStats();
+  if (tab === 'matches') { renderMatchesByJudge(); populateMatchesRoundFilter(); }
+  if (tab === 'stats') { renderStats(); populateStatsRoundFilter(); }
   if (tab === 'judges') loadJudgesList();
 }
 
 async function initAdmin() {
   await loadAdminData();
   renderTeamsList();
+  renderRoundsList();
+  populateRoundSelects();
 }
 
 async function loadAdminData() {
   try {
-    const [teamsSnap, matchesSnap] = await Promise.all([
+    const [teamsSnap, matchesSnap, roundsSnap] = await Promise.all([
       db.ref('teams').get(),
-      db.ref('matches').get()
+      db.ref('matches').get(),
+      db.ref('rounds').get()
     ]);
     adminTeams = teamsSnap.exists() ? teamsSnap.val() : {};
     adminMatches = matchesSnap.exists() ? matchesSnap.val() : {};
+    adminRounds = roundsSnap.exists() ? roundsSnap.val() : {};
   } catch (e) {
     console.error('Failed to load data', e);
   }
+}
+
+// ===== ROUNDS =====
+
+async function saveRound() {
+  const errEl = document.getElementById('roundFormError');
+  const successEl = document.getElementById('roundFormSuccess');
+  const name = document.getElementById('roundName').value.trim();
+  const editId = document.getElementById('editRoundId').value;
+
+  if (!name) { showError(errEl, 'Round name is required.'); return; }
+
+  // Get selected teams
+  const selectedTeams = [];
+  document.querySelectorAll('#roundTeamsSelect input[type="checkbox"]:checked').forEach(cb => {
+    selectedTeams.push(cb.value);
+  });
+
+  if (selectedTeams.length === 0) { showError(errEl, 'Select at least one team.'); return; }
+
+  const data = {
+    name,
+    status: 'active',
+    teamIds: selectedTeams,
+    schedule: [],
+    matches: {}
+  };
+
+  try {
+    if (editId) {
+      await db.ref(`rounds/${editId}`).update(data);
+      showSuccess(successEl, 'Round updated!');
+    } else {
+      await db.ref('rounds').push(data);
+      showSuccess(successEl, 'Round created!');
+    }
+    await loadAdminData();
+    renderRoundsList();
+    populateRoundSelects();
+    resetRoundForm();
+  } catch (e) {
+    showError(errEl, 'Error: ' + e.message);
+  }
+}
+
+function resetRoundForm() {
+  document.getElementById('editRoundId').value = '';
+  document.getElementById('roundName').value = '';
+  document.querySelectorAll('#roundTeamsSelect input[type="checkbox"]').forEach(cb => cb.checked = false);
+}
+
+function renderRoundsList() {
+  const container = document.getElementById('roundsList');
+  const rounds = Object.entries(adminRounds);
+  if (!rounds.length) { container.innerHTML = '<p class="empty-state">No rounds yet.</p>'; return; }
+
+  container.innerHTML = rounds.map(([id, round]) => `
+    <div class="team-item">
+      <div class="team-item-header">
+        <div>
+          <span class="team-item-name">${esc(round.name)}</span>
+          <span class="judge-badge" style="margin-left:8px;font-size:0.7rem;background:${round.status === 'active' ? 'var(--success)' : 'var(--danger)'}">${round.status}</span>
+        </div>
+        <div class="team-item-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editRound('${id}')">Edit</button>
+          ${round.status === 'active' ? `<button class="btn btn-danger btn-sm" onclick="closeRound('${id}')">Close</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteRound('${id}')">Delete</button>
+        </div>
+      </div>
+      <div class="team-item-players" style="font-size: 0.85rem;">
+        ${round.teamIds ? round.teamIds.map(tid => `<span class="player-tag">${esc(adminTeams[tid]?.name || 'Unknown')}</span>`).join('') : 'No teams'}
+      </div>
+    </div>
+  `).join('');
+}
+
+function editRound(id) {
+  const round = adminRounds[id];
+  if (!round) return;
+  document.getElementById('editRoundId').value = id;
+  document.getElementById('roundName').value = round.name || '';
+  
+  document.querySelectorAll('#roundTeamsSelect input[type="checkbox"]').forEach(cb => {
+    cb.checked = round.teamIds && round.teamIds.includes(cb.value);
+  });
+
+  document.querySelector('[onclick="switchTab(\'rounds\')"]')?.click();
+  document.getElementById('roundName').focus();
+}
+
+async function closeRound(id) {
+  if (!confirm('Close this round? Judges will no longer be able to add matches to it.')) return;
+  try {
+    await db.ref(`rounds/${id}/status`).set('closed');
+    await loadAdminData();
+    renderRoundsList();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function deleteRound(id) {
+  if (!confirm('Delete this round? This cannot be undone.')) return;
+  try {
+    await db.ref(`rounds/${id}`).remove();
+    await loadAdminData();
+    renderRoundsList();
+    populateRoundSelects();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+function populateRoundSelects() {
+  const selects = [
+    document.getElementById('timetableRoundSelect'),
+    document.getElementById('matchesRoundFilter'),
+    document.getElementById('statsRoundFilter')
+  ];
+
+  const rounds = Object.entries(adminRounds);
+
+  selects.forEach(select => {
+    if (!select) return;
+    const currentValue = select.value;
+    select.innerHTML = select.id === 'matchesRoundFilter' || select.id === 'statsRoundFilter'
+      ? '<option value="">All Rounds</option>'
+      : '<option value="">— Choose round —</option>';
+
+    rounds.forEach(([id, round]) => {
+      const opt = new Option(round.name, id);
+      select.add(opt);
+    });
+
+    select.value = currentValue;
+  });
+}
+
+// ===== TIMETABLE / SCHEDULE =====
+
+async function loadTimetableForRound() {
+  const roundId = document.getElementById('timetableRoundSelect').value;
+  const form = document.getElementById('timetableForm');
+  const list = document.getElementById('timetableList');
+
+  if (!roundId) {
+    form.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+
+  const round = adminRounds[roundId];
+  if (!round) return;
+
+  // Populate team selects
+  const team1Select = document.getElementById('timetableTeam1');
+  const team2Select = document.getElementById('timetableTeam2');
+
+  team1Select.innerHTML = '<option value="">— Choose team —</option>';
+  team2Select.innerHTML = '<option value="">— Choose team —</option>';
+
+  (round.teamIds || []).forEach(teamId => {
+    const team = adminTeams[teamId];
+    if (team) {
+      team1Select.add(new Option(team.name, teamId));
+      team2Select.add(new Option(team.name, teamId));
+    }
+  });
+
+  form.style.display = 'block';
+  renderTimetable(roundId);
+}
+
+function renderTimetable(roundId) {
+  const round = adminRounds[roundId];
+  const container = document.getElementById('timetableList');
+
+  if (!round || !round.schedule || round.schedule.length === 0) {
+    container.innerHTML = '<p class="empty-state">No matches scheduled yet.</p>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="padding: 0.75rem; text-align: left;">Time</th>
+            <th style="padding: 0.75rem; text-align: left;">Team 1</th>
+            <th style="padding: 0.75rem; text-align: center;">vs</th>
+            <th style="padding: 0.75rem; text-align: left;">Team 2</th>
+            <th style="padding: 0.75rem; text-align: left;">Room</th>
+            <th style="padding: 0.75rem; text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${round.schedule.map((match, idx) => `
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem;">${new Date(match.time).toLocaleString()}</td>
+              <td style="padding: 0.75rem;">${esc(adminTeams[match.team1Id]?.name || 'Unknown')}</td>
+              <td style="padding: 0.75rem; text-align: center;">VS</td>
+              <td style="padding: 0.75rem;">${esc(adminTeams[match.team2Id]?.name || 'Unknown')}</td>
+              <td style="padding: 0.75rem;">${match.roomNumber}</td>
+              <td style="padding: 0.75rem; text-align: right;">
+                <button class="btn btn-danger btn-sm" onclick="deleteScheduleMatch('${roundId}', ${idx})">Remove</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function addMatchToTimetable() {
+  const errEl = document.getElementById('timetableError');
+  const successEl = document.getElementById('timetableSuccess');
+  const roundId = document.getElementById('timetableRoundSelect').value;
+  const timeStr = document.getElementById('matchTime').value;
+  const team1Id = document.getElementById('timetableTeam1').value;
+  const team2Id = document.getElementById('timetableTeam2').value;
+  const roomNumber = document.getElementById('roomNumber').value;
+
+  if (!roundId) { showError(errEl, 'Select a round.'); return; }
+  if (!timeStr) { showError(errEl, 'Select a time.'); return; }
+  if (!team1Id || !team2Id) { showError(errEl, 'Select both teams.'); return; }
+  if (team1Id === team2Id) { showError(errEl, 'Teams must be different.'); return; }
+  if (!roomNumber) { showError(errEl, 'Enter room number.'); return; }
+
+  const matchData = {
+    time: new Date(timeStr).getTime(),
+    team1Id,
+    team2Id,
+    roomNumber: parseInt(roomNumber)
+  };
+
+  try {
+    const round = adminRounds[roundId];
+    if (!round.schedule) round.schedule = [];
+    round.schedule.push(matchData);
+
+    await db.ref(`rounds/${roundId}/schedule`).set(round.schedule);
+    showSuccess(successEl, 'Match added to schedule!');
+
+    document.getElementById('matchTime').value = '';
+    document.getElementById('timetableTeam1').value = '';
+    document.getElementById('timetableTeam2').value = '';
+    document.getElementById('roomNumber').value = '';
+
+    await loadAdminData();
+    renderTimetable(roundId);
+  } catch (e) {
+    showError(errEl, 'Error: ' + e.message);
+  }
+}
+
+async function deleteScheduleMatch(roundId, idx) {
+  if (!confirm('Remove this match from schedule?')) return;
+  try {
+    const round = adminRounds[roundId];
+    round.schedule.splice(idx, 1);
+    await db.ref(`rounds/${roundId}/schedule`).set(round.schedule);
+    await loadAdminData();
+    renderTimetable(roundId);
+  } catch (e) { alert('Error: ' + e.message); }
 }
 
 // ===== TEAMS =====
@@ -57,6 +323,7 @@ async function saveTeam() {
     }
     await loadAdminData();
     renderTeamsList();
+    populateRoundTeamsCheckboxes();
     resetTeamForm();
   } catch (e) {
     showError(errEl, 'Error: ' + e.message);
@@ -81,6 +348,7 @@ async function deleteTeam(id) {
     await db.ref(`teams/${id}`).remove();
     await loadAdminData();
     renderTeamsList();
+    populateRoundTeamsCheckboxes();
   } catch (e) { alert('Error: ' + e.message); }
 }
 
@@ -113,12 +381,31 @@ function renderTeamsList() {
   `).join('');
 }
 
+function populateRoundTeamsCheckboxes() {
+  const container = document.getElementById('roundTeamsSelect');
+  const teams = Object.entries(adminTeams);
+
+  container.innerHTML = teams.map(([id, team]) => `
+    <label class="checkbox-label">
+      <input type="checkbox" value="${id}" />
+      ${esc(team.name)}
+    </label>
+  `).join('');
+}
+
 // ===== MATCHES =====
 
 function renderMatchesByJudge() {
   const container = document.getElementById('judgeGroups');
-  const matches = Object.entries(adminMatches);
-  if (!matches.length) { container.innerHTML = '<p class="empty-state">No matches yet.</p>'; return; }
+  const filterRound = document.getElementById('matchesRoundFilter')?.value || '';
+  
+  let matches = Object.entries(adminMatches);
+  
+  if (filterRound) {
+    matches = matches.filter(([, m]) => m.roundId === filterRound);
+  }
+
+  if (!matches.length) { container.innerHTML = '<p class="empty-state">No matches recorded yet.</p>'; return; }
 
   // Group by judge
   const groups = {};
@@ -165,6 +452,20 @@ function renderMatchesByJudge() {
   }).join('');
 }
 
+function populateMatchesRoundFilter() {
+  const select = document.getElementById('matchesRoundFilter');
+  if (!select) return;
+  
+  const currentValue = select.value;
+  select.innerHTML = '<option value="">All Rounds</option>';
+  
+  Object.entries(adminRounds).forEach(([id, round]) => {
+    select.add(new Option(round.name, id));
+  });
+  
+  select.value = currentValue;
+}
+
 function buildPlayerScoreString(m) {
   const parts = [];
   if (m.playerScoresA) {
@@ -188,7 +489,8 @@ async function deleteMatch(id) {
 // ===== STATS =====
 
 function renderStats() {
-  const matches = Object.values(adminMatches);
+  const filterRound = document.getElementById('statsRoundFilter')?.value || '';
+  const matches = Object.values(adminMatches).filter(m => !filterRound || m.roundId === filterRound);
 
   // Team win count
   const teamWins = {};
@@ -254,6 +556,20 @@ function renderStats() {
           <span class="ranking-score">${pts.toLocaleString()}</span>
         </div>`).join('')}</div>`
     : '<p class="empty-state">No data yet.</p>';
+}
+
+function populateStatsRoundFilter() {
+  const select = document.getElementById('statsRoundFilter');
+  if (!select) return;
+  
+  const currentValue = select.value;
+  select.innerHTML = '<option value="">Overall (All Rounds)</option>';
+  
+  Object.entries(adminRounds).forEach(([id, round]) => {
+    select.add(new Option(round.name, id));
+  });
+  
+  select.value = currentValue;
 }
 
 // ===== JUDGES =====
@@ -325,4 +641,26 @@ function esc(str = '') {
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
+}
+
+function showError(el, msg) {
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  el.classList.add('error-msg');
+  setTimeout(() => el.classList.add('hidden'), 5000);
+}
+
+function showSuccess(el, msg) {
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  el.classList.add('success-msg');
+  setTimeout(() => el.classList.add('hidden'), 5000);
+}
+
+function formatDate(timestamp) {
+  if (!timestamp) return '—';
+  const d = new Date(timestamp);
+  return d.toLocaleString();
 }
