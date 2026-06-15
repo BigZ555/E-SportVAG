@@ -55,7 +55,11 @@
 
     <!-- Tab Navigation -->
     <div class="tab-nav">
-      <button class="tab-btn active" onclick="switchTab('teams')">
+      <button class="tab-btn active" onclick="switchTab('rounds')">
+        <svg viewBox="0 0 20 20" fill="none" width="16"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 6v4h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Rounds
+      </button>
+      <button class="tab-btn" onclick="switchTab('teams')">
         <svg viewBox="0 0 20 20" fill="none" width="16"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M2 17c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         Teams
       </button>
@@ -73,8 +77,76 @@
       </button>
     </div>
 
+    <!-- ROUNDS TAB -->
+    <div id="tab-rounds" class="tab-content active">
+      <div class="two-col-layout">
+        <!-- Create Round -->
+        <div class="card">
+          <h3 class="card-title">Create New Round</h3>
+          <input type="hidden" id="editRoundId" />
+          <div class="form-group">
+            <label class="form-label">Round Name</label>
+            <input type="text" id="roundName" class="form-input" placeholder="e.g. Round 1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Select Teams for This Round</label>
+            <div id="roundTeamsSelect" class="teams-checkbox-list"></div>
+          </div>
+          <div id="roundFormError" class="error-msg hidden"></div>
+          <div id="roundFormSuccess" class="success-msg hidden"></div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" onclick="resetRoundForm()">Clear</button>
+            <button class="btn btn-primary" onclick="saveRound()">Create Round</button>
+          </div>
+        </div>
+
+        <!-- Rounds List -->
+        <div class="card">
+          <h3 class="card-title">Active Rounds</h3>
+          <div id="roundsList" class="teams-list">
+            <p class="empty-state">No rounds yet.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timetable Section -->
+      <div class="card" style="margin-top: 2rem;">
+        <h3 class="card-title">Manage Timetable</h3>
+        <div class="form-group">
+          <label class="form-label">Select Round</label>
+          <select id="timetableRoundSelect" class="form-input form-select" onchange="loadTimetableForRound()">
+            <option value="">— Choose round —</option>
+          </select>
+        </div>
+
+        <div id="timetableForm" style="display:none;">
+          <div class="form-group">
+            <label class="form-label">Match Time</label>
+            <input type="datetime-local" id="matchTime" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Team 1</label>
+            <select id="timetableTeam1" class="form-input form-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Team 2</label>
+            <select id="timetableTeam2" class="form-input form-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Room Number</label>
+            <input type="number" id="roomNumber" class="form-input" placeholder="101" min="1" />
+          </div>
+          <div id="timetableError" class="error-msg hidden"></div>
+          <div id="timetableSuccess" class="success-msg hidden"></div>
+          <button class="btn btn-primary btn-full" onclick="addMatchToTimetable()">Add Match</button>
+        </div>
+
+        <div id="timetableList" style="margin-top: 1.5rem;"></div>
+      </div>
+    </div>
+
     <!-- TEAMS TAB -->
-    <div id="tab-teams" class="tab-content active">
+    <div id="tab-teams" class="tab-content hidden">
       <div class="two-col-layout">
         <div class="card">
           <h3 class="card-title">Add / Edit Team</h3>
@@ -114,6 +186,12 @@
 
     <!-- MATCHES TAB -->
     <div id="tab-matches" class="tab-content hidden">
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label class="form-label">Filter by Round</label>
+        <select id="matchesRoundFilter" class="form-input form-select" onchange="renderMatchesByJudge()">
+          <option value="">All Matches</option>
+        </select>
+      </div>
       <div class="judge-groups" id="judgeGroups">
         <p class="empty-state">No matches recorded yet.</p>
       </div>
@@ -121,6 +199,13 @@
 
     <!-- STATS TAB -->
     <div id="tab-stats" class="tab-content hidden">
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label class="form-label">View Statistics For</label>
+        <select id="statsRoundFilter" class="form-input form-select" onchange="renderStats()">
+          <option value="">Overall (All Rounds)</option>
+        </select>
+      </div>
+
       <div class="stats-grid">
         <div class="card stat-highlight-card">
           <div class="stat-highlight-icon">🏆</div>
@@ -186,6 +271,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="/js/firebase-config.js"></script>
   <script src="/js/auth.js"></script>
-  <script src="/js/admin.js"></script>
+  <script src="/js/admin-extended.js"></script>
 </body>
 </html>
