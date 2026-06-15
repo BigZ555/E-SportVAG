@@ -2,6 +2,8 @@
 
 let currentSession = null;
 let allTeams = {};
+let allRounds = {};
+let activeRound = null; // The currently active (non-closed) round
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!db) return;
@@ -14,8 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (badge) badge.textContent = currentSession.displayName;
   if (label) label.textContent = `Judge: ${currentSession.displayName}`;
 
-  loadTeamsForJudge();
-  loadJudgeHistory();
+  loadJudgeInit();
 
   // Live preview on score change
   document.addEventListener('input', (e) => {
@@ -23,24 +24,63 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-async function loadTeamsForJudge() {
+async function loadJudgeInit() {
   try {
-    const snap = await db.ref('teams').get();
-    if (!snap.exists()) return;
-    allTeams = snap.val();
+    const [teamsSnap, roundsSnap] = await Promise.all([
+      db.ref('teams').get(),
+      db.ref('rounds').get()
+    ]);
 
-    const selectA = document.getElementById('teamASelect');
-    const selectB = document.getElementById('teamBSelect');
+    allTeams = teamsSnap.exists() ? teamsSnap.val() : {};
+    allRounds = roundsSnap.exists() ? roundsSnap.val() : {};
 
-    Object.entries(allTeams).forEach(([id, team]) => {
-      const optA = new Option(team.name, id);
-      const optB = new Option(team.name, id);
-      selectA.add(optA);
-      selectB.add(optB);
-    });
+    // Find the active (non-closed) round
+    // Prefer the most recently created open round
+    const openRounds = Object.entries(allRounds)
+      .filter(([, r]) => !r.closed)
+      .sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+
+    if (openRounds.length === 0) {
+      // No active round — show warning, hide form
+      document.getElementById('noActiveRoundWarning').classList.remove('hidden');
+      document.getElementById('matchFormCard').style.display = 'none';
+    } else {
+      activeRound = { id: openRounds[0][0], ...openRounds[0][1] };
+      document.getElementById('noActiveRoundWarning').classList.add('hidden');
+      document.getElementById('matchFormCard').style.display = '';
+
+      // Set badge
+      const badge = document.getElementById('activeRoundBadge');
+      if (badge) badge.textContent = activeRound.name;
+
+      // Populate teams — only teams in this round
+      populateTeamSelects();
+    }
+
   } catch (e) {
-    console.error('Failed to load teams', e);
+    console.error('Failed to load data', e);
   }
+
+  loadJudgeHistory();
+}
+
+function populateTeamSelects() {
+  const selectA = document.getElementById('teamASelect');
+  const selectB = document.getElementById('teamBSelect');
+
+  // Reset
+  selectA.innerHTML = '<option value="">— Choose team —</option>';
+  selectB.innerHTML = '<option value="">— Choose team —</option>';
+
+  if (!activeRound) return;
+
+  const teamIds = activeRound.teamIds || {};
+  Object.keys(teamIds).forEach(tid => {
+    if (!allTeams[tid]) return;
+    const name = allTeams[tid].name;
+    selectA.add(new Option(name, tid));
+    selectB.add(new Option(name, tid));
+  });
 }
 
 function fillTeamPlayers(side) {
@@ -122,6 +162,12 @@ async function saveMatch() {
   const errEl = document.getElementById('matchError');
   const successEl = document.getElementById('matchSuccess');
 
+  // Re-check active round
+  if (!activeRound || activeRound.closed) {
+    showError(errEl, 'No active round. An admin must open a round first.');
+    return;
+  }
+
   const teamAId = document.getElementById('teamASelect')?.value;
   const teamBId = document.getElementById('teamBSelect')?.value;
 
@@ -131,7 +177,6 @@ async function saveMatch() {
   const teamA = allTeams[teamAId];
   const teamB = allTeams[teamBId];
 
-  // Collect player scores
   const playerScoresA = {};
   (teamA.players || []).forEach((p, i) => {
     const val = parseInt(document.getElementById(`scoreA${i}`)?.value || '0', 10);
@@ -153,6 +198,8 @@ async function saveMatch() {
   const matchData = {
     judgeId: currentSession.username,
     judgeName: currentSession.displayName,
+    roundId: activeRound.id,
+    roundName: activeRound.name,
     teamAId, teamBId,
     teamA: teamA.name,
     teamB: teamB.name,
@@ -198,16 +245,23 @@ async function loadJudgeHistory() {
         ? `<span class="match-winner-label winner-b">${esc(m.teamB)} wins</span>`
         : `<span class="match-winner-label winner-draw">Draw</span>`;
 
-      return `<div class="match-card">
-        <div>
+      const roundLabel = m.roundName
+        ? `<span class="judge-badge" style="font-size:0.7rem">${esc(m.roundName)}</span>`
+        : '';
+
+      return `<div class="match-card" style="flex-direction:column;align-items:flex-start;gap:0.4rem">
+        <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
           <div class="match-card-teams">
             <span>${esc(m.teamA)}</span>
             <span class="match-card-score">${(m.scoreA||0).toLocaleString()} — ${(m.scoreB||0).toLocaleString()}</span>
             <span>${esc(m.teamB)}</span>
           </div>
-          <div class="match-card-meta">${formatDate(m.timestamp)}</div>
+          <div style="display:flex;gap:0.5rem;align-items:center">
+            ${roundLabel}
+            ${winnerLabel}
+          </div>
         </div>
-        ${winnerLabel}
+        <div class="match-card-meta">${formatDate(m.timestamp)}</div>
       </div>`;
     }).join('');
   } catch (e) {
