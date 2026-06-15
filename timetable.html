@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoChampion — Timetable</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <nav class="navbar">
+    <div class="nav-logo">
+      <svg class="nav-pin" viewBox="0 0 24 32" fill="none">
+        <path d="M12 0C5.4 0 0 5.4 0 12C0 21 12 32 12 32C12 32 24 21 24 12C24 5.4 18.6 0 12 0Z" fill="var(--accent)"/>
+        <circle cx="12" cy="12" r="5" fill="var(--bg)"/>
+      </svg>
+      <span class="nav-title">GEO<span class="accent">CHAMP</span></span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Standings</a>
+      <a href="timetable.html" class="nav-link active">Timetable</a>
+      <a href="login.html" class="nav-link">Judge Login</a>
+      <a href="admin.html" class="nav-link">Admin</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <header class="page-header">
+      <div class="header-label">Schedule</div>
+      <h1 class="page-title">Match <span class="accent">Timetable</span></h1>
+      <p class="page-sub">Upcoming and scheduled matches by round</p>
+    </header>
+
+    <div id="timetableContent">
+      <p class="loading-row" style="text-align:center;padding:3rem;color:var(--text-muted);font-family:var(--font-mono)">Loading timetable...</p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span>GeoChampion · School Edition</span>
+    <svg viewBox="0 0 24 32" fill="none" width="14">
+      <path d="M12 0C5.4 0 0 5.4 0 12C0 21 12 32 12 32C12 32 24 21 24 12C24 5.4 18.6 0 12 0Z" fill="var(--accent)" opacity="0.5"/>
+    </svg>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/timetable.js"></script>
+</body>
+</html>

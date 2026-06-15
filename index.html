@@ -10,11 +10,9 @@
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <!-- Decorative background -->
   <div class="bg-grid"></div>
   <div class="bg-glow"></div>
 
-  <!-- SVG Decorations -->
   <div class="deco deco-pin-1">
     <svg viewBox="0 0 40 56" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M20 0C9 0 0 9 0 20C0 35 20 56 20 56C20 56 40 35 40 20C40 9 31 0 20 0Z" fill="var(--accent)" opacity="0.15"/>
@@ -47,6 +45,7 @@
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link active">Standings</a>
+      <a href="timetable.html" class="nav-link">Timetable</a>
       <a href="login.html" class="nav-link">Judge Login</a>
       <a href="admin.html" class="nav-link">Admin</a>
     </div>
@@ -71,6 +70,14 @@
       <div class="stat-card">
         <div class="stat-val" id="topTeam">—</div>
         <div class="stat-label">Current Leader</div>
+      </div>
+    </div>
+
+    <!-- Round selector -->
+    <div class="round-selector-bar" id="roundSelectorBar">
+      <span class="round-selector-label">View standings for:</span>
+      <div class="round-selector-btns" id="roundSelectorBtns">
+        <button class="round-btn active" onclick="selectRound('overall')" id="btn-overall">Overall</button>
       </div>
     </div>
 
