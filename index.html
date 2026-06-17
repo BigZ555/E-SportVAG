@@ -46,8 +46,7 @@
     <div class="nav-links">
       <a href="index.html" class="nav-link active">Standings</a>
       <a href="timetable.html" class="nav-link">Timetable</a>
-      <a href="login.html" class="nav-link">Judge Login</a>
-      <a href="admin.html" class="nav-link">Admin</a>
+      <div id="navAuthArea" class="nav-links"></div>
     </div>
   </nav>
 
@@ -73,7 +72,6 @@
       </div>
     </div>
 
-    <!-- Round selector -->
     <div class="round-selector-bar" id="roundSelectorBar">
       <span class="round-selector-label">View standings for:</span>
       <div class="round-selector-btns" id="roundSelectorBtns">
@@ -111,6 +109,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="/js/firebase-config.js"></script>
+  <script src="/js/auth.js"></script>
   <script src="/js/public.js"></script>
+  <script>initNavAuth();</script>
 </body>
 </html>
