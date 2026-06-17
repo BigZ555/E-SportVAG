@@ -285,13 +285,13 @@ async function saveTimetableEntry() {
   const successEl = document.getElementById('ttFormSuccess');
 
   const roundId = document.getElementById('ttRoundSelect').value;
-  const datetime = document.getElementById('ttDateTime').value;
+  const time = document.getElementById('ttTime').value;
   const team1Id = document.getElementById('ttTeam1').value;
   const team2Id = document.getElementById('ttTeam2').value;
   const room = document.getElementById('ttRoom').value.trim();
 
   if (!roundId) { showError(errEl, 'Select a round.'); return; }
-  if (!datetime) { showError(errEl, 'Date and time is required.'); return; }
+  if (!time) { showError(errEl, 'Time is required.'); return; }
   if (!team1Id || !team2Id) { showError(errEl, 'Select both teams.'); return; }
   if (team1Id === team2Id) { showError(errEl, 'Teams must be different.'); return; }
   if (!room) { showError(errEl, 'Room number is required.'); return; }
@@ -303,14 +303,14 @@ async function saveTimetableEntry() {
   try {
     await db.ref('timetable').push({
       roundId, roundName,
-      datetime,
+      datetime: time,
       team1Id, team1: team1Name,
       team2Id, team2: team2Name,
       room,
       createdAt: Date.now()
     });
     showSuccess(successEl, 'Timetable entry added!');
-    document.getElementById('ttDateTime').value = '';
+    document.getElementById('ttTime').value = '';
     document.getElementById('ttTeam1').value = '';
     document.getElementById('ttTeam2').value = '';
     document.getElementById('ttRoom').value = '';
@@ -329,7 +329,11 @@ function renderTimetableAdmin() {
   if (filterRound) {
     entries = entries.filter(([, e]) => e.roundId === filterRound);
   }
-  entries.sort((a, b) => new Date(a[1].datetime) - new Date(b[1].datetime));
+  entries.sort((a, b) => {
+    const ta = a[1].datetime || '';
+    const tb = b[1].datetime || '';
+    return ta.localeCompare(tb);
+  });
 
   if (!entries.length) {
     container.innerHTML = '<p class="empty-state">No entries yet.</p>';
@@ -362,11 +366,15 @@ async function deleteTimetableEntry(id) {
 
 function formatTTDateTime(dtString) {
   if (!dtString) return '—';
-  const d = new Date(dtString);
-  return d.toLocaleString('hu-HU', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit'
-  });
+  // Support both old datetime-local format and new time-only format (HH:MM)
+  if (dtString.includes('T') || dtString.includes('-')) {
+    const d = new Date(dtString);
+    return d.toLocaleString('hu-HU', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+  return dtString; // already HH:MM
 }
 
 // ===== MATCHES =====

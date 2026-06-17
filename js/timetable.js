@@ -22,9 +22,13 @@ async function loadTimetable() {
     const rounds = roundsSnap.exists() ? roundsSnap.val() : {};
 
     const allEntries = Object.entries(entries).sort((a, b) => {
-      const dateA = new Date(a[1].datetime).getTime();
-      const dateB = new Date(b[1].datetime).getTime();
-      return dateA - dateB;
+      const ta = a[1].datetime || '';
+      const tb = b[1].datetime || '';
+      // Support both old datetime strings and new time-only HH:MM
+      if (ta.includes('T') || ta.includes('-')) {
+        return new Date(ta).getTime() - new Date(tb).getTime();
+      }
+      return ta.localeCompare(tb);
     });
 
     if (!allEntries.length) {
@@ -86,6 +90,11 @@ async function loadTimetable() {
 
 function formatTTDate(dtString) {
   if (!dtString) return '—';
+  // New format: just HH:MM
+  if (!dtString.includes('T') && !dtString.includes('-')) {
+    return dtString;
+  }
+  // Old format: full datetime string
   const d = new Date(dtString);
   return d.toLocaleString('hu-HU', {
     year: 'numeric', month: '2-digit', day: '2-digit',

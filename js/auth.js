@@ -1,16 +1,16 @@
 // ===== AUTH HELPERS =====
 
 function getSession() {
-  try { return JSON.parse(sessionStorage.getItem('geocamp_user')) || null; } 
+  try { return JSON.parse(localStorage.getItem('geocamp_user')) || null; } 
   catch { return null; }
 }
 
 function setSession(user) {
-  sessionStorage.setItem('geocamp_user', JSON.stringify(user));
+  localStorage.setItem('geocamp_user', JSON.stringify(user));
 }
 
 function clearSession() {
-  sessionStorage.removeItem('geocamp_user');
+  localStorage.removeItem('geocamp_user');
 }
 
 function handleLogout() {
