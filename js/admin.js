@@ -1,5 +1,15 @@
 // ===== ADMIN PANEL =====
 
+// Auto-restore admin session from localStorage on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const sess = getSession();
+  if (sess && sess.role === 'admin') {
+    document.getElementById('adminLoginGate').classList.add('hidden');
+    document.getElementById('adminPanel').classList.remove('hidden');
+    initAdmin();
+  }
+});
+
 let adminTeams = {};
 let adminMatches = {};
 let adminRounds = {};
