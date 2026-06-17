@@ -128,4 +128,3 @@ document.addEventListener('DOMContentLoaded', () => {
   const un = document.getElementById('loginUsername');
   if (un) un.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 });
-EOF
