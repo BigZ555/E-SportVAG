@@ -131,6 +131,8 @@ function renderStandings() {
     return;
   }
 
+  renderMatches();
+
   tbody.innerHTML = sorted.map((t, i) => {
     const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-n';
     return `<tr>
@@ -142,6 +144,50 @@ function renderStandings() {
       <td class="l-badge">${t.l}</td>
       <td class="points-badge">${t.pts.toLocaleString()}</td>
     </tr>`;
+  }).join('');
+}
+
+function renderMatches() {
+  const container = document.getElementById('matchesList');
+  if (!container) return;
+
+  let matchEntries = [];
+
+  if (currentRoundFilter === 'overall') {
+    // All matches, grouped by round
+    Object.entries(allMatchesPublic).forEach(([id, m]) => {
+      const round = allRoundsPublic[m.roundId];
+      matchEntries.push({ id, match: m, roundName: round ? round.name : 'Unknown Round' });
+    });
+  } else {
+    // Only matches from this round
+    Object.entries(allMatchesPublic).forEach(([id, m]) => {
+      if (m.roundId === currentRoundFilter) {
+        matchEntries.push({ id, match: m, roundName: null });
+      }
+    });
+  }
+
+  // Sort newest first
+  matchEntries.sort((a, b) => (b.match.createdAt || 0) - (a.match.createdAt || 0));
+
+  if (matchEntries.length === 0) {
+    container.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-muted);font-family:var(--font-mono)">No matches played yet.</p>';
+    return;
+  }
+
+  container.innerHTML = matchEntries.map(({ match: m, roundName }) => {
+    const winnerA = m.winner === 'A';
+    const winnerB = m.winner === 'B';
+    const draw = m.winner === 'D' || (!winnerA && !winnerB);
+    return `
+    <div class="match-result-row">
+      ${roundName ? `<span class="match-round-tag">${esc(roundName)}</span>` : ''}
+      <span class="match-team ${winnerA ? 'match-winner' : ''}">${esc(m.teamA)}</span>
+      <span class="match-score">${m.scoreA ?? 0} <span class="match-vs">:</span> ${m.scoreB ?? 0}</span>
+      <span class="match-team match-team-right ${winnerB ? 'match-winner' : ''}">${esc(m.teamB)}</span>
+      <span class="match-result-tag ${winnerA ? 'tag-win' : winnerB ? 'tag-loss' : 'tag-draw'}">${winnerA ? `${esc(m.teamA)} wins` : winnerB ? `${esc(m.teamB)} wins` : 'Draw'}</span>
+    </div>`;
   }).join('');
 }
 

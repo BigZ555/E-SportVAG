@@ -672,3 +672,73 @@ body {
   .timetable-row { grid-template-columns: 1fr; gap: 0.5rem; }
   .tt-room { justify-content: flex-end; }
 }
+
+/* ===== MATCHES SECTION (public standings) ===== */
+.matches-section {
+  margin-top: 2.5rem;
+  margin-bottom: 2rem;
+}
+.matches-section-title {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-family: var(--font-display); font-size: 1.4rem;
+  color: var(--text); margin-bottom: 1rem;
+}
+.matches-section-title svg { color: var(--accent); }
+
+.match-result-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+  transition: border-color 0.2s;
+}
+.match-result-row:hover { border-color: rgba(255,204,0,0.25); }
+
+.match-round-tag {
+  grid-column: 1 / -1;
+  display: inline-block;
+  font-family: var(--font-mono); font-size: 0.72rem;
+  color: var(--accent); background: rgba(255,204,0,0.08);
+  border: 1px solid rgba(255,204,0,0.2);
+  border-radius: 4px; padding: 2px 8px;
+  width: fit-content;
+  margin-bottom: 0.25rem;
+}
+
+.match-team {
+  font-size: 0.95rem; font-weight: 600; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.match-team-right { text-align: right; }
+.match-team.match-winner { color: var(--accent); }
+
+.match-score {
+  font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700;
+  color: var(--text); text-align: center; white-space: nowrap;
+  background: var(--bg3); border-radius: var(--radius-sm);
+  padding: 4px 14px;
+}
+.match-vs { color: var(--text-muted); margin: 0 3px; }
+
+.match-result-tag {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono); font-size: 0.72rem;
+  border-radius: 4px; padding: 2px 8px;
+  width: fit-content; margin-top: 0.2rem;
+}
+.tag-win  { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.25); }
+.tag-loss { background: rgba(248,113,113,0.1); color: #f87171; border: 1px solid rgba(248,113,113,0.2); }
+.tag-draw { background: rgba(148,163,184,0.1); color: #94a3b8; border: 1px solid rgba(148,163,184,0.2); }
+
+@media (max-width: 600px) {
+  .match-result-row {
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.5rem;
+  }
+  .match-round-tag, .match-result-tag { display: none; }
+}
