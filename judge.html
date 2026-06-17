@@ -19,8 +19,8 @@
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Standings</a>
-      <span class="nav-link judge-badge" id="judgeNameBadge">Judge</span>
-      <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Logout</button>
+      <a href="timetable.html" class="nav-link">Timetable</a>
+      <div id="navAuthArea" class="nav-links"></div>
     </div>
   </nav>
 
@@ -113,5 +113,16 @@
   <script src="/js/firebase-config.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/judge.js"></script>
+  <script>
+    // Guard: only judge or admin allowed
+    (function() {
+      const sess = requireRole('judge');
+      if (!sess) return;
+      initNavAuth();
+      // Set judge label
+      const label = document.getElementById('judgeLabel');
+      if (label) label.textContent = (sess.displayName || sess.username) + ' — Judge Panel';
+    })();
+  </script>
 </body>
 </html>
