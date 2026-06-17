@@ -20,35 +20,12 @@
     <div class="nav-links">
       <a href="index.html" class="nav-link">Standings</a>
       <a href="timetable.html" class="nav-link">Timetable</a>
-      <span class="nav-link judge-badge">Admin</span>
-      <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Logout</button>
+      <div id="navAuthArea" class="nav-links"></div>
     </div>
   </nav>
 
-  <!-- Admin Login Gate -->
-  <div id="adminLoginGate" class="container center-content">
-    <div class="login-card">
-      <div class="login-icon">
-        <svg viewBox="0 0 24 24" fill="none" width="36"><rect x="3" y="11" width="18" height="11" rx="2" stroke="var(--accent)" stroke-width="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg>
-      </div>
-      <h2 class="login-title">Admin <span class="accent">Access</span></h2>
-      <p class="login-sub">Administrator credentials required</p>
-      <div class="form-group">
-        <label class="form-label">Username</label>
-        <input type="text" id="adminUsername" class="form-input" placeholder="admin" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input type="password" id="adminPassword" class="form-input" placeholder="••••••••" />
-      </div>
-      <div id="adminLoginError" class="error-msg hidden"></div>
-      <button class="btn btn-primary btn-full" onclick="handleAdminLogin()">Enter Admin Panel</button>
-      <a href="index.html" class="back-link">← Back to Standings</a>
-    </div>
-  </div>
-
-  <!-- Admin Panel (hidden until login) -->
-  <main class="container hidden" id="adminPanel">
+  <!-- Admin Panel -->
+  <main class="container" id="adminPanel">
     <header class="page-header">
       <div class="header-label">Administration</div>
       <h1 class="page-title">Admin <span class="accent">Panel</span></h1>
@@ -111,12 +88,9 @@
             <button class="btn btn-primary" onclick="saveTeam()">Save Team</button>
           </div>
         </div>
-
         <div class="card">
           <h3 class="card-title">All Teams</h3>
-          <div id="teamsList" class="teams-list">
-            <p class="empty-state">No teams yet.</p>
-          </div>
+          <div id="teamsList" class="teams-list"><p class="empty-state">No teams yet.</p></div>
         </div>
       </div>
     </div>
@@ -132,9 +106,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">Teams in this Round</label>
-            <div id="roundTeamCheckboxes" class="team-checkbox-list">
-              <p class="empty-state" style="padding:1rem 0">No teams available.</p>
-            </div>
+            <div id="roundTeamCheckboxes" class="team-checkbox-list"><p class="empty-state" style="padding:1rem 0">No teams available.</p></div>
           </div>
           <div id="roundFormError" class="error-msg hidden"></div>
           <div id="roundFormSuccess" class="success-msg hidden"></div>
@@ -142,12 +114,9 @@
             <button class="btn btn-primary" onclick="createRound()">Create Round</button>
           </div>
         </div>
-
         <div class="card">
           <h3 class="card-title">All Rounds</h3>
-          <div id="roundsList" class="teams-list">
-            <p class="empty-state">No rounds yet.</p>
-          </div>
+          <div id="roundsList" class="teams-list"><p class="empty-state">No rounds yet.</p></div>
         </div>
       </div>
     </div>
@@ -159,9 +128,7 @@
           <h3 class="card-title">Add Match to Timetable</h3>
           <div class="form-group">
             <label class="form-label">Round</label>
-            <select id="ttRoundSelect" class="form-input form-select" onchange="onTTRoundChange()">
-              <option value="">— Select round —</option>
-            </select>
+            <select id="ttRoundSelect" class="form-input form-select" onchange="onTTRoundChange()"><option value="">— Select round —</option></select>
           </div>
           <div class="form-group">
             <label class="form-label">Időpont (óra)</label>
@@ -169,15 +136,11 @@
           </div>
           <div class="form-group">
             <label class="form-label">Team 1</label>
-            <select id="ttTeam1" class="form-input form-select">
-              <option value="">— Select team —</option>
-            </select>
+            <select id="ttTeam1" class="form-input form-select"><option value="">— Select team —</option></select>
           </div>
           <div class="form-group">
             <label class="form-label">Team 2</label>
-            <select id="ttTeam2" class="form-input form-select">
-              <option value="">— Select team —</option>
-            </select>
+            <select id="ttTeam2" class="form-input form-select"><option value="">— Select team —</option></select>
           </div>
           <div class="form-group">
             <label class="form-label">Room / Terem száma</label>
@@ -189,27 +152,20 @@
             <button class="btn btn-primary" onclick="saveTimetableEntry()">Add to Timetable</button>
           </div>
         </div>
-
         <div class="card">
           <h3 class="card-title">Timetable Entries</h3>
           <div class="form-group">
             <label class="form-label">Filter by Round</label>
-            <select id="ttFilterRound" class="form-input form-select" onchange="renderTimetableAdmin()">
-              <option value="">All Rounds</option>
-            </select>
+            <select id="ttFilterRound" class="form-input form-select" onchange="renderTimetableAdmin()"><option value="">All Rounds</option></select>
           </div>
-          <div id="ttAdminList" class="teams-list">
-            <p class="empty-state">No entries yet.</p>
-          </div>
+          <div id="ttAdminList" class="teams-list"><p class="empty-state">No entries yet.</p></div>
         </div>
       </div>
     </div>
 
     <!-- MATCHES TAB -->
     <div id="tab-matches" class="tab-content hidden">
-      <div class="judge-groups" id="judgeGroups">
-        <p class="empty-state">No matches recorded yet.</p>
-      </div>
+      <div class="judge-groups" id="judgeGroups"><p class="empty-state">No matches recorded yet.</p></div>
     </div>
 
     <!-- STATS TAB -->
@@ -231,7 +187,6 @@
           <div id="statHighestPlayerScore" class="stat-highlight-val">—</div>
         </div>
       </div>
-
       <div class="two-col-layout" style="margin-top:2rem">
         <div class="card">
           <h3 class="card-title">Team Rankings</h3>
@@ -267,9 +222,7 @@
         </div>
         <div class="card">
           <h3 class="card-title">Judge Accounts</h3>
-          <div id="judgesList" class="teams-list">
-            <p class="empty-state">No judges yet.</p>
-          </div>
+          <div id="judgesList" class="teams-list"><p class="empty-state">No judges yet.</p></div>
         </div>
       </div>
     </div>
@@ -280,5 +233,14 @@
   <script src="/js/firebase-config.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/admin.js"></script>
+  <script>
+    // Guard: only admin allowed
+    (function() {
+      const sess = requireRole('admin');
+      if (!sess) return;
+      initNavAuth();
+      initAdmin();
+    })();
+  </script>
 </body>
 </html>
