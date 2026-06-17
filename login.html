@@ -12,6 +12,13 @@
   <div class="bg-grid"></div>
   <div class="bg-glow"></div>
 
+  <div class="deco deco-pin-1">
+    <svg viewBox="0 0 40 56" fill="none"><path d="M20 0C9 0 0 9 0 20C0 35 20 56 20 56C20 56 40 35 40 20C40 9 31 0 20 0Z" fill="var(--accent)" opacity="0.15"/><circle cx="20" cy="20" r="8" fill="var(--accent)" opacity="0.4"/></svg>
+  </div>
+  <div class="deco deco-globe">
+    <svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="45" stroke="var(--accent)" stroke-width="1" opacity="0.08"/><ellipse cx="50" cy="50" rx="20" ry="45" stroke="var(--accent)" stroke-width="1" opacity="0.08"/><line x1="5" y1="50" x2="95" y2="50" stroke="var(--accent)" stroke-width="1" opacity="0.08"/></svg>
+  </div>
+
   <nav class="navbar">
     <div class="nav-logo">
       <svg class="nav-pin" viewBox="0 0 24 32" fill="none"><path d="M12 0C5.4 0 0 5.4 0 12C0 21 12 32 12 32C12 32 24 21 24 12C24 5.4 18.6 0 12 0Z" fill="var(--accent)"/><circle cx="12" cy="12" r="5" fill="var(--bg)"/></svg>
@@ -20,7 +27,6 @@
     <div class="nav-links">
       <a href="index.html" class="nav-link">Standings</a>
       <a href="timetable.html" class="nav-link">Timetable</a>
-      <div id="navAuthArea" class="nav-links"></div>
     </div>
   </nav>
 
@@ -32,12 +38,12 @@
           <circle cx="20" cy="20" r="8" fill="var(--bg)"/>
         </svg>
       </div>
-      <h2 class="login-title"><span class="accent">Login</span></h2>
-      <p class="login-sub">Sign in to access Judge or Admin panel</p>
+      <h2 class="login-title">Sign <span class="accent">In</span></h2>
+      <p class="login-sub">Enter your credentials to continue</p>
 
       <div class="form-group">
         <label class="form-label">Username</label>
-        <input type="text" id="loginUsername" class="form-input" placeholder="username" autocomplete="username" />
+        <input type="text" id="loginUsername" class="form-input" placeholder="judge1" autocomplete="username" />
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
@@ -61,14 +67,12 @@
   <script src="/js/auth.js"></script>
   <script>
     // If already logged in, redirect to appropriate panel
-    (function() {
-      const sess = getSession();
+    document.addEventListener('DOMContentLoaded', () => {
+      const sess = getSession ? getSession() : null;
       if (sess) {
-        if (sess.role === 'admin') window.location.href = 'admin.html';
-        else if (sess.role === 'judge') window.location.href = 'judge.html';
+        window.location.href = sess.role === 'admin' ? 'admin.html' : 'judge.html';
       }
-      initNavAuth();
-    })();
+    });
   </script>
 </body>
 </html>
