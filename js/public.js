@@ -137,7 +137,7 @@ function renderStandings() {
     const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-n';
     return `<tr>
       <td><span class="rank-badge ${rankClass}">${i + 1}</span></td>
-      <td><strong>${esc(t.name)}</strong></td>
+      <td><strong class="team-name-link" onclick="openTeamModal('${t.id}')">${esc(t.name)}</strong></td>
       <td style="color:var(--text-muted)">${t.mp}</td>
       <td class="w-badge">${t.w}</td>
       <td class="d-badge">${t.d}</td>
@@ -183,9 +183,9 @@ function renderMatches() {
     return `
     <div class="match-result-row">
       ${roundName ? `<span class="match-round-tag">${esc(roundName)}</span>` : ''}
-      <span class="match-team ${winnerA ? 'match-winner' : ''}">${esc(m.teamA)}</span>
+      <span class="match-team team-name-link ${winnerA ? 'match-winner' : ''}" onclick="openTeamModal('${esc(m.teamAId || '')}')">${esc(m.teamA)}</span>
       <span class="match-score">${m.scoreA ?? 0} <span class="match-vs">:</span> ${m.scoreB ?? 0}</span>
-      <span class="match-team match-team-right ${winnerB ? 'match-winner' : ''}">${esc(m.teamB)}</span>
+      <span class="match-team match-team-right team-name-link ${winnerB ? 'match-winner' : ''}" onclick="openTeamModal('${esc(m.teamBId || '')}')">${esc(m.teamB)}</span>
       <span class="match-result-tag ${winnerA ? 'tag-win' : winnerB ? 'tag-loss' : 'tag-draw'}">${winnerA ? `${esc(m.teamA)} wins` : winnerB ? `${esc(m.teamB)} wins` : 'Draw'}</span>
     </div>`;
   }).join('');

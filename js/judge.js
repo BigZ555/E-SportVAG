@@ -362,11 +362,33 @@ async function saveMatch() {
 
   try {
     await db.ref('matches').push(matchData);
+    await removeMatchedTimetableEntry(round.id, teamAId, teamBId);
     showSuccess(successEl, `Match saved! ${winner === 'A' ? teamA.name : winner === 'B' ? teamB.name : 'Draw'} ${winner === 'draw' ? '' : 'wins!'}`);
     resetMatchForm({ keepRoundAndFormat: true });
     loadJudgeHistory();
   } catch (e) {
     showError(errEl, 'Failed to save: ' + e.message);
+  }
+}
+
+// Removes the timetable entry for this round/team-pair, if one exists —
+// the match has now been played, so it shouldn't show as "upcoming" anymore.
+async function removeMatchedTimetableEntry(roundId, teamAId, teamBId) {
+  try {
+    const snap = await db.ref('timetable').get();
+    if (!snap.exists()) return;
+    const entries = snap.val();
+    const deletions = [];
+    Object.entries(entries).forEach(([id, e]) => {
+      if (e.roundId !== roundId) return;
+      const isMatch =
+        (e.team1Id === teamAId && e.team2Id === teamBId) ||
+        (e.team1Id === teamBId && e.team2Id === teamAId);
+      if (isMatch) deletions.push(db.ref(`timetable/${id}`).remove());
+    });
+    await Promise.all(deletions);
+  } catch (e) {
+    console.error('Failed to clean up timetable entry', e);
   }
 }
 
@@ -423,9 +445,9 @@ async function loadJudgeHistory() {
       return `<div class="match-card" style="flex-direction:column;align-items:flex-start;gap:0.4rem">
         <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
           <div class="match-card-teams">
-            <span>${esc(m.teamA)}</span>
+            <span class="team-name-link" onclick="openTeamModal('${esc(m.teamAId || '')}')">${esc(m.teamA)}</span>
             <span class="match-card-score">${(m.scoreA||0).toLocaleString()} — ${(m.scoreB||0).toLocaleString()}</span>
-            <span>${esc(m.teamB)}</span>
+            <span class="team-name-link" onclick="openTeamModal('${esc(m.teamBId || '')}')">${esc(m.teamB)}</span>
           </div>
           <div style="display:flex;gap:0.5rem;align-items:center">
             ${roundLabel}

@@ -66,9 +66,9 @@ async function loadTimetable() {
                   ${formatTTDate(entry.datetime)}
                 </div>
                 <div class="tt-teams">
-                  <span class="tt-team">${esc(entry.team1)}</span>
+                  <span class="tt-team team-name-link" onclick="openTeamModal('${esc(entry.team1Id || '')}')">${esc(entry.team1)}</span>
                   <span class="tt-vs">VS</span>
-                  <span class="tt-team">${esc(entry.team2)}</span>
+                  <span class="tt-team team-name-link" onclick="openTeamModal('${esc(entry.team2Id || '')}')">${esc(entry.team2)}</span>
                 </div>
                 <div class="tt-room">
                   <svg viewBox="0 0 20 20" fill="none" width="14" style="flex-shrink:0"><rect x="3" y="3" width="14" height="14" rx="2" stroke="var(--text-dim)" stroke-width="1.5"/><path d="M7 10h6M10 7v6" stroke="var(--text-dim)" stroke-width="1.5" stroke-linecap="round"/></svg>
