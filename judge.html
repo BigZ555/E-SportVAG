@@ -44,6 +44,21 @@
         <span id="activeRoundBadge" class="judge-badge" style="font-size:0.75rem;margin-left:auto"></span>
       </h3>
 
+      <div class="match-teams-grid" style="grid-template-columns:1fr 1fr;margin-bottom:1.25rem">
+        <div class="form-group">
+          <label class="form-label">Forduló (bajnoki kör)</label>
+          <select id="roundSelect" class="form-input form-select" onchange="onRoundChange()">
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Meccs formátuma</label>
+          <select id="matchFormatSelect" class="form-input form-select" onchange="onFormatChange()">
+            <option value="1">1 fordulós meccs</option>
+            <option value="2">2 fordulós meccs (összesített pontszám)</option>
+          </select>
+        </div>
+      </div>
+
       <div class="match-teams-grid">
         <!-- Team A -->
         <div class="team-section">
@@ -56,7 +71,7 @@
           </div>
           <div id="teamAPlayers" class="players-grid"></div>
           <div class="form-group score-group">
-            <label class="form-label">Team A — Player Scores</label>
+            <label class="form-label" id="teamAScoresLabel">Team A — Player Scores</label>
             <div id="teamAScores" class="score-inputs"></div>
           </div>
         </div>
@@ -74,7 +89,7 @@
           </div>
           <div id="teamBPlayers" class="players-grid"></div>
           <div class="form-group score-group">
-            <label class="form-label">Team B — Player Scores</label>
+            <label class="form-label" id="teamBScoresLabel">Team B — Player Scores</label>
             <div id="teamBScores" class="score-inputs"></div>
           </div>
         </div>
@@ -86,7 +101,9 @@
         <div class="result-team" id="previewB">Team B: <span id="previewScoreB">0</span></div>
       </div>
 
-      <div id="matchError" class="error-msg hidden"></div>
+      <div id="matchRoundsBreakdown" class="match-rounds-breakdown hidden" style="font-size:0.8rem;color:var(--text-muted);text-align:center;margin-top:0.5rem"></div>
+
+      <div id="matchError" class="error-msg hidden"></div></div>
       <div id="matchSuccess" class="success-msg hidden"></div>
 
       <div class="form-actions">

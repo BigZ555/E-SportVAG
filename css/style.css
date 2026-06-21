@@ -427,6 +427,23 @@ body {
   box-shadow: 0 0 0 3px rgba(255,204,0,0.08);
 }
 
+.score-round-block {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 0;
+}
+.score-round-block + .score-round-block {
+  border-top: 1px dashed var(--card-border);
+  margin-top: 4px;
+}
+.score-round-title {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+
 .match-result-preview {
   display: flex; align-items: center; justify-content: center; gap: 2rem;
   background: var(--bg3); border: 1px solid var(--card-border);

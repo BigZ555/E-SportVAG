@@ -4,6 +4,7 @@ let currentSession = null;
 let allTeams = {};
 let allRounds = {};
 let activeRound = null; // The currently active (non-closed) round
+let selectedRound = null; // The round currently chosen in the round selector (defaults to activeRound)
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!db) return;
@@ -49,11 +50,15 @@ async function loadJudgeInit() {
       document.getElementById('noActiveRoundWarning').classList.add('hidden');
       document.getElementById('matchFormCard').style.display = '';
 
+      populateRoundSelect();
+      // Default to the active round
+      selectedRound = activeRound;
+
       // Set badge
       const badge = document.getElementById('activeRoundBadge');
       if (badge) badge.textContent = activeRound.name;
 
-      // Populate teams — only teams in this round
+      // Populate teams — only teams in the selected round
       populateTeamSelects();
     }
 
@@ -64,6 +69,51 @@ async function loadJudgeInit() {
   loadJudgeHistory();
 }
 
+function populateRoundSelect() {
+  const select = document.getElementById('roundSelect');
+  if (!select) return;
+
+  select.innerHTML = '';
+
+  // All rounds, sorted newest first; active round labeled
+  const entries = Object.entries(allRounds)
+    .sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+
+  entries.forEach(([id, r]) => {
+    const isActive = activeRound && id === activeRound.id;
+    const label = `${r.name}${r.closed ? ' (lezárt)' : ''}${isActive ? ' — aktív' : ''}`;
+    const opt = new Option(label, id);
+    select.add(opt);
+  });
+
+  if (activeRound) select.value = activeRound.id;
+}
+
+function onRoundChange() {
+  const select = document.getElementById('roundSelect');
+  const roundId = select?.value;
+  if (!roundId || !allRounds[roundId]) return;
+
+  selectedRound = { id: roundId, ...allRounds[roundId] };
+
+  const badge = document.getElementById('activeRoundBadge');
+  if (badge) badge.textContent = selectedRound.name + (selectedRound.closed ? ' (lezárt)' : '');
+
+  populateTeamSelects();
+  resetMatchForm({ keepRoundAndFormat: true });
+}
+
+function onFormatChange() {
+  // Re-render the score inputs for whichever teams are already selected
+  fillTeamPlayers('A');
+  fillTeamPlayers('B');
+}
+
+function getMatchFormat() {
+  const sel = document.getElementById('matchFormatSelect');
+  return sel && sel.value === '2' ? 2 : 1;
+}
+
 function populateTeamSelects() {
   const selectA = document.getElementById('teamASelect');
   const selectB = document.getElementById('teamBSelect');
@@ -72,9 +122,10 @@ function populateTeamSelects() {
   selectA.innerHTML = '<option value="">— Choose team —</option>';
   selectB.innerHTML = '<option value="">— Choose team —</option>';
 
-  if (!activeRound) return;
+  const round = selectedRound || activeRound;
+  if (!round) return;
 
-  const teamIds = activeRound.teamIds || {};
+  const teamIds = round.teamIds || {};
   Object.keys(teamIds).forEach(tid => {
     if (!allTeams[tid]) return;
     const name = allTeams[tid].name;
@@ -88,33 +139,64 @@ function fillTeamPlayers(side) {
   const teamId = select.value;
   const playersDiv = document.getElementById(`team${side}Players`);
   const scoresDiv = document.getElementById(`team${side}Scores`);
+  const labelEl = document.getElementById(`team${side}ScoresLabel`);
+  const teamLabel = side === 'A' ? 'Team A' : 'Team B';
 
   if (!teamId || !allTeams[teamId]) {
     playersDiv.innerHTML = '';
     scoresDiv.innerHTML = '';
+    if (labelEl) labelEl.textContent = `${teamLabel} — Player Scores`;
     updatePreview();
     return;
   }
 
   const team = allTeams[teamId];
   const players = team.players || [];
+  const format = getMatchFormat();
 
   playersDiv.innerHTML = players.map(p =>
     `<div class="player-chip">${esc(p)}</div>`
   ).join('');
 
-  scoresDiv.innerHTML = players.map((p, i) => `
-    <div class="score-row">
-      <span class="score-player-name">${esc(p)}</span>
-      <input type="number" class="score-input" id="score${side}${i}" 
-             min="0" max="25000" placeholder="0" onchange="updatePreview()" />
-    </div>
-  `).join('');
+  if (format === 2) {
+    if (labelEl) labelEl.textContent = `${teamLabel} — Pontszámok (1. és 2. forduló)`;
+    scoresDiv.innerHTML = `
+      <div class="score-round-block">
+        <div class="score-round-title">1. forduló</div>
+        ${players.map((p, i) => `
+          <div class="score-row">
+            <span class="score-player-name">${esc(p)}</span>
+            <input type="number" class="score-input" id="score${side}${i}_r1"
+                   min="0" max="25000" placeholder="0" onchange="updatePreview()" />
+          </div>
+        `).join('')}
+      </div>
+      <div class="score-round-block">
+        <div class="score-round-title">2. forduló</div>
+        ${players.map((p, i) => `
+          <div class="score-row">
+            <span class="score-player-name">${esc(p)}</span>
+            <input type="number" class="score-input" id="score${side}${i}_r2"
+                   min="0" max="25000" placeholder="0" onchange="updatePreview()" />
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } else {
+    if (labelEl) labelEl.textContent = `${teamLabel} — Player Scores`;
+    scoresDiv.innerHTML = players.map((p, i) => `
+      <div class="score-row">
+        <span class="score-player-name">${esc(p)}</span>
+        <input type="number" class="score-input" id="score${side}${i}"
+               min="0" max="25000" placeholder="0" onchange="updatePreview()" />
+      </div>
+    `).join('');
+  }
 
   updatePreview();
 }
 
-function getTeamTotalScore(side) {
+function getTeamRoundScore(side, roundSuffix) {
   const select = document.getElementById(`team${side}Select`);
   const teamId = select?.value;
   if (!teamId || !allTeams[teamId]) return 0;
@@ -122,19 +204,34 @@ function getTeamTotalScore(side) {
   const players = allTeams[teamId].players || [];
   let total = 0;
   players.forEach((_, i) => {
-    const val = parseInt(document.getElementById(`score${side}${i}`)?.value || '0', 10);
+    const elId = roundSuffix ? `score${side}${i}${roundSuffix}` : `score${side}${i}`;
+    const val = parseInt(document.getElementById(elId)?.value || '0', 10);
     total += isNaN(val) ? 0 : val;
   });
   return total;
+}
+
+function getTeamTotalScore(side) {
+  const format = getMatchFormat();
+  if (format === 2) {
+    return getTeamRoundScore(side, '_r1') + getTeamRoundScore(side, '_r2');
+  }
+  return getTeamRoundScore(side, '');
 }
 
 function updatePreview() {
   const teamAId = document.getElementById('teamASelect')?.value;
   const teamBId = document.getElementById('teamBSelect')?.value;
   const preview = document.getElementById('matchPreview');
+  const breakdown = document.getElementById('matchRoundsBreakdown');
 
-  if (!teamAId || !teamBId) { if (preview) preview.style.display = 'none'; return; }
+  if (!teamAId || !teamBId) {
+    if (preview) preview.style.display = 'none';
+    if (breakdown) breakdown.classList.add('hidden');
+    return;
+  }
 
+  const format = getMatchFormat();
   const scoreA = getTeamTotalScore('A');
   const scoreB = getTeamTotalScore('B');
 
@@ -156,15 +253,28 @@ function updatePreview() {
   }
 
   preview.style.display = 'flex';
+
+  if (format === 2 && breakdown) {
+    const a1 = getTeamRoundScore('A', '_r1');
+    const a2 = getTeamRoundScore('A', '_r2');
+    const b1 = getTeamRoundScore('B', '_r1');
+    const b2 = getTeamRoundScore('B', '_r2');
+    breakdown.classList.remove('hidden');
+    breakdown.innerHTML = `1. forduló: ${a1.toLocaleString()} — ${b1.toLocaleString()} &nbsp;|&nbsp; 2. forduló: ${a2.toLocaleString()} — ${b2.toLocaleString()}`;
+  } else if (breakdown) {
+    breakdown.classList.add('hidden');
+    breakdown.innerHTML = '';
+  }
 }
 
 async function saveMatch() {
   const errEl = document.getElementById('matchError');
   const successEl = document.getElementById('matchSuccess');
 
-  // Re-check active round
-  if (!activeRound || activeRound.closed) {
-    showError(errEl, 'No active round. An admin must open a round first.');
+  const round = selectedRound || activeRound;
+
+  if (!round) {
+    showError(errEl, 'Nincs kiválasztott forduló. Kérlek válassz egy fordulót.');
     return;
   }
 
@@ -176,20 +286,58 @@ async function saveMatch() {
 
   const teamA = allTeams[teamAId];
   const teamB = allTeams[teamBId];
+  const format = getMatchFormat();
 
-  const playerScoresA = {};
-  (teamA.players || []).forEach((p, i) => {
-    const val = parseInt(document.getElementById(`scoreA${i}`)?.value || '0', 10);
-    playerScoresA[p] = isNaN(val) ? 0 : val;
-  });
-  const playerScoresB = {};
-  (teamB.players || []).forEach((p, i) => {
-    const val = parseInt(document.getElementById(`scoreB${i}`)?.value || '0', 10);
-    playerScoresB[p] = isNaN(val) ? 0 : val;
-  });
+  let playerScoresA, playerScoresB, scoreA, scoreB, roundScores;
 
-  const scoreA = Object.values(playerScoresA).reduce((s, v) => s + v, 0);
-  const scoreB = Object.values(playerScoresB).reduce((s, v) => s + v, 0);
+  if (format === 2) {
+    const psA1 = {}, psA2 = {}, psB1 = {}, psB2 = {};
+    (teamA.players || []).forEach((p, i) => {
+      psA1[p] = parseInt(document.getElementById(`scoreA${i}_r1`)?.value || '0', 10) || 0;
+      psA2[p] = parseInt(document.getElementById(`scoreA${i}_r2`)?.value || '0', 10) || 0;
+    });
+    (teamB.players || []).forEach((p, i) => {
+      psB1[p] = parseInt(document.getElementById(`scoreB${i}_r1`)?.value || '0', 10) || 0;
+      psB2[p] = parseInt(document.getElementById(`scoreB${i}_r2`)?.value || '0', 10) || 0;
+    });
+
+    playerScoresA = {};
+    Object.keys(psA1).forEach(p => { playerScoresA[p] = (psA1[p] || 0) + (psA2[p] || 0); });
+    playerScoresB = {};
+    Object.keys(psB1).forEach(p => { playerScoresB[p] = (psB1[p] || 0) + (psB2[p] || 0); });
+
+    scoreA = Object.values(playerScoresA).reduce((s, v) => s + v, 0);
+    scoreB = Object.values(playerScoresB).reduce((s, v) => s + v, 0);
+
+    roundScores = {
+      round1: {
+        scoreA: Object.values(psA1).reduce((s, v) => s + v, 0),
+        scoreB: Object.values(psB1).reduce((s, v) => s + v, 0),
+        playerScoresA: psA1,
+        playerScoresB: psB1
+      },
+      round2: {
+        scoreA: Object.values(psA2).reduce((s, v) => s + v, 0),
+        scoreB: Object.values(psB2).reduce((s, v) => s + v, 0),
+        playerScoresA: psA2,
+        playerScoresB: psB2
+      }
+    };
+  } else {
+    playerScoresA = {};
+    (teamA.players || []).forEach((p, i) => {
+      const val = parseInt(document.getElementById(`scoreA${i}`)?.value || '0', 10);
+      playerScoresA[p] = isNaN(val) ? 0 : val;
+    });
+    playerScoresB = {};
+    (teamB.players || []).forEach((p, i) => {
+      const val = parseInt(document.getElementById(`scoreB${i}`)?.value || '0', 10);
+      playerScoresB[p] = isNaN(val) ? 0 : val;
+    });
+
+    scoreA = Object.values(playerScoresA).reduce((s, v) => s + v, 0);
+    scoreB = Object.values(playerScoresB).reduce((s, v) => s + v, 0);
+  }
 
   let winner = 'draw';
   if (scoreA > scoreB) winner = 'A';
@@ -198,36 +346,55 @@ async function saveMatch() {
   const matchData = {
     judgeId: currentSession.username,
     judgeName: currentSession.displayName,
-    roundId: activeRound.id,
-    roundName: activeRound.name,
+    roundId: round.id,
+    roundName: round.name,
     teamAId, teamBId,
     teamA: teamA.name,
     teamB: teamB.name,
     scoreA, scoreB,
     playerScoresA, playerScoresB,
     winner,
+    format,
     timestamp: Date.now()
   };
+
+  if (format === 2) matchData.roundScores = roundScores;
 
   try {
     await db.ref('matches').push(matchData);
     showSuccess(successEl, `Match saved! ${winner === 'A' ? teamA.name : winner === 'B' ? teamB.name : 'Draw'} ${winner === 'draw' ? '' : 'wins!'}`);
-    resetMatchForm();
+    resetMatchForm({ keepRoundAndFormat: true });
     loadJudgeHistory();
   } catch (e) {
     showError(errEl, 'Failed to save: ' + e.message);
   }
 }
 
-function resetMatchForm() {
+function resetMatchForm(opts = {}) {
   document.getElementById('teamASelect').value = '';
   document.getElementById('teamBSelect').value = '';
   document.getElementById('teamAPlayers').innerHTML = '';
   document.getElementById('teamBPlayers').innerHTML = '';
   document.getElementById('teamAScores').innerHTML = '';
   document.getElementById('teamBScores').innerHTML = '';
+
+  const labelA = document.getElementById('teamAScoresLabel');
+  const labelB = document.getElementById('teamBScoresLabel');
+  if (labelA) labelA.textContent = 'Team A — Player Scores';
+  if (labelB) labelB.textContent = 'Team B — Player Scores';
+
+  if (!opts.keepRoundAndFormat) {
+    const roundSelect = document.getElementById('roundSelect');
+    if (roundSelect && activeRound) roundSelect.value = activeRound.id;
+    selectedRound = activeRound;
+    const formatSelect = document.getElementById('matchFormatSelect');
+    if (formatSelect) formatSelect.value = '1';
+  }
+
   const preview = document.getElementById('matchPreview');
   if (preview) preview.style.display = 'none';
+  const breakdown = document.getElementById('matchRoundsBreakdown');
+  if (breakdown) { breakdown.classList.add('hidden'); breakdown.innerHTML = ''; }
 }
 
 async function loadJudgeHistory() {
@@ -249,6 +416,10 @@ async function loadJudgeHistory() {
         ? `<span class="judge-badge" style="font-size:0.7rem">${esc(m.roundName)}</span>`
         : '';
 
+      const formatLabel = m.format === 2
+        ? `<span class="judge-badge" style="font-size:0.7rem">2 fordulós</span>`
+        : '';
+
       return `<div class="match-card" style="flex-direction:column;align-items:flex-start;gap:0.4rem">
         <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
           <div class="match-card-teams">
@@ -258,6 +429,7 @@ async function loadJudgeHistory() {
           </div>
           <div style="display:flex;gap:0.5rem;align-items:center">
             ${roundLabel}
+            ${formatLabel}
             ${winnerLabel}
           </div>
         </div>
